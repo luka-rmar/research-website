@@ -1,0 +1,25 @@
+version: 0.2
+
+env:
+  variables:
+    WORDPRESS_API_URL: "https://myright.news/"
+    NODE_ENV: "homolog"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+  build:
+    commands:
+      - npm install
+      - ./node_modules/.bin/frontity build
+  post_build:
+    commands:
+      - 'aws s3 sync "build/" "s3://becapital-research-website-homolog" --delete --acl "public-read"'
+      - 'aws cloudfront create-invalidation --distribution-id E267YL21UG3LNC --paths "/*"'
+
+artifacts:
+  base-directory: build
+  files:
+    - "**/*"
+  discard-paths: no

@@ -1,0 +1,40 @@
+version: "3.4"
+
+services:
+  traefik:
+    image: "traefik:v2.3"
+    container_name: "traefik"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/traefik:/traefik"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #- "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+      - "--certificatesresolvers.myresolver.acme.email=tecnologia@be.capital"
+      - "--certificatesresolvers.myresolver.acme.storage=/traefik/acme.json"
+
+  front:
+    build:
+      context: .
+    image: reisalbuquerque/becapital-research-website:latest
+    command: npm run dev
+    environment:
+      - NODE_ENV=homolog
+      - PORT=80
+      - WORDPRESS_API_URL=https://myright.news/
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`research-homolog.be.capital`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver"
